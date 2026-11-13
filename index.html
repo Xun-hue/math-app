@@ -46,30 +46,42 @@ function drawNav(){$('nav').innerHTML=TABS.map(t=>`<button class="${tab==t[0]?'o
 const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a),lcm=(a,b)=>a*b/gcd(a,b);
 const frac=(n,d)=>{const g=gcd(n,d)||1;n/=g;d/=g;return d==1?`${n}`:`${n}/${d}`};
 
-/* ---------- 倍數應用題資料 ---------- */
-const P=[
-{kind:'t',k:4,s:12,t:'爸爸採的柚子是媽媽的 <mark>4 倍</mark>。媽媽採了 <mark>12 顆</mark>，爸爸採了幾顆？'},
-{kind:'d',k:4,s:9,t:'爸爸採了 <mark>36 顆</mark>柚子，是媽媽的 <mark>4 倍</mark>。媽媽採了幾顆？'},
-{kind:'s',k:4,s:9,t:'爸爸和媽媽<mark>共</mark>採了 <mark>45 顆</mark>柚子，爸爸是媽媽的 <mark>4 倍</mark>。兩人各採幾顆？'}];
+/* ---------- 倍數應用題（隨機產生） ---------- */
+const C=[{a:'媽媽',b:'爸爸',i:'柚子',u:'顆',w:'果園裡'},{a:'小明',b:'哥哥',i:'貼紙',u:'張',w:'班上'},{a:'小美',b:'姊姊',i:'彈珠',u:'顆',w:'校外教學時'},{a:'甲班',b:'乙班',i:'瓶礦泉水',u:'瓶',w:'運動會中'},{a:'店員小林',b:'店員小王',i:'個麵包',u:'個',w:'超市裡'},{a:'弟弟',b:'阿公',i:'張郵票',u:'張',w:'假日時'}];
+let cur=null,tried=0,solved=false,msg='';
+const rn=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function newP(){
+ const c=C[rn(0,C.length-1)],kind=['t','d','s','f'][rn(0,3)],k=rn(2,6),s=rn(3,20),big=k*s,tot=big+s,diff=big-s,x=c.u+c.i;
+ const t={t:`${c.w}${c.b}的${c.i}是${c.a}的 <mark>${k} 倍</mark>。${c.a}有 <mark>${s} ${c.u}</mark>，${c.b}有幾${c.u}？`,
+ d:`${c.w}${c.b}有 <mark>${big} ${c.u}</mark>${c.i}，是${c.a}的 <mark>${k} 倍</mark>。${c.a}有幾${c.u}？`,
+ s:`${c.w}${c.b}和${c.a}<mark>共</mark>有 <mark>${tot} ${c.u}</mark>${c.i}，${c.b}是${c.a}的 <mark>${k} 倍</mark>。兩人各有幾${c.u}？`,
+ f:`${c.w}${c.b}比${c.a}<mark>多</mark> <mark>${diff} ${c.u}</mark>${c.i}，${c.b}是${c.a}的 <mark>${k} 倍</mark>。兩人各有幾${c.u}？`}[kind];
+ cur={kind,k,s,big,tot,diff,c,t,ans:kind=='t'?[big]:kind=='d'?[s]:[s,big]};
+ tried=0;solved=false;msg='';help=0;}
 function diagram(p){
- const u=Math.min(60,240/p.k),k=p.k,big=k*p.s,tot=big+p.s;
- const lm=p.kind=='d'?'?':p.kind=='s'?'?':p.s, lb=p.kind=='d'?big:'?';
- let b=`<text x="0" y="40" font-size="15">媽媽</text><rect x="50" y="15" width="${u}" height="36" rx="8" fill="#FFC93C"/><text x="${50+u/2}" y="39" font-size="16" text-anchor="middle" fill="#3a2b00" style="fill:#3a2b00">${lm}</text>`;
- b+=`<text x="0" y="92" font-size="15">爸爸</text>`;
- for(let i=0;i<k;i++)b+=`<rect x="${50+i*u}" y="67" width="${u-3}" height="36" rx="8" fill="#3D5AFE"/>`;
- b+=`<text x="${50+k*u/2}" y="91" font-size="16" text-anchor="middle" style="fill:#fff">${lb}</text>`;
- if(p.kind=='s')b+=`<path d="M${50+k*u+8} 15V103" stroke="#FF6B8B" stroke-width="3" fill="none"/><text x="${50+k*u+16}" y="64" font-size="15">共 ${tot}</text>`;
- return `<svg viewBox="0 0 330 115" width="100%" role="img" aria-label="線段圖">${b}</svg><p class="sub">黃色＝媽媽 1 份，藍色＝爸爸 ${k} 份</p>`;}
+ const u=Math.min(60,220/p.k),k=p.k,c=p.c,kd=p.kind;
+ const lm=kd=='t'?p.s:'?',lb=kd=='d'?p.big:'?';
+ let b=`<text x="0" y="38" font-size="13">${c.a.slice(-2)}</text><rect x="62" y="15" width="${u-3}" height="36" rx="8" fill="#FFC93C"/><text x="${62+u/2}" y="39" font-size="16" text-anchor="middle" style="fill:#3a2b00">${lm}</text>`;
+ b+=`<text x="0" y="90" font-size="13">${c.b.slice(-2)}</text>`;
+ for(let i=0;i<k;i++)b+=`<rect x="${62+i*u}" y="67" width="${u-3}" height="36" rx="8" fill="${kd=='f'&&i>0?'#FF6B8B':'#3D5AFE'}"/>`;
+ b+=`<text x="${62+k*u/2}" y="91" font-size="16" text-anchor="middle" style="fill:#fff">${lb}</text>`;
+ const ex=62+k*u+8;
+ if(kd=='s')b+=`<path d="M${ex} 15V103" stroke="#FF6B8B" stroke-width="3" fill="none"/><text x="${ex+8}" y="64" font-size="14">共 ${p.tot}</text>`;
+ if(kd=='f')b+=`<text x="${ex}" y="90" font-size="14">多 ${p.diff}</text>`;
+ return `<svg viewBox="0 0 340 115" width="100%" role="img" aria-label="線段圖">${b}</svg><p class="sub">黃色＝${c.a}的 1 份，藍色＝${c.b}的 ${k} 份${kd=='f'?'（粉紅色是多出來的部分）':''}</p>`;}
 function steps(p){
- const k=p.k,s=p.s,big=k*s,tot=big+s,T=[];
- T.push(['① 題目拆解',p.t+`<p>已知：${p.kind=='t'?'媽媽 12 顆，爸爸是媽媽的 4 倍':p.kind=='d'?'爸爸 36 顆，爸爸是媽媽的 4 倍':'總共 45 顆，爸爸是媽媽的 4 倍'}<br>求：${p.kind=='t'?'爸爸':p.kind=='d'?'媽媽':'兩人各幾顆'}</p>`]);
- T.push(['② 畫線段圖',diagram(p)]);
- if(p.kind=='t')T.push(['③ 列式與原因','爸爸 ＝ 媽媽 × 倍數<br>＝ 12 × 4<p class="sub">為什麼？「4 倍」就是把媽媽的 12 顆重複 4 份。</p>'],['④ 計算','12 × 4 ＝ <b class="ok">48</b>　答：爸爸採了 48 顆。'],['⑤ 代回檢驗','48 ÷ 12 ＝ 4，剛好是 4 倍 <span class="ok">✔</span>']);
- if(p.kind=='d')T.push(['③ 列式與原因','媽媽 ＝ 爸爸 ÷ 倍數<br>＝ 36 ÷ 4<p class="sub">為什麼？爸爸有 4 份，一份就是 36 平分成 4 份。</p>'],['④ 計算','36 ÷ 4 ＝ <b class="ok">9</b>　答：媽媽採了 9 顆。'],['⑤ 代回檢驗','9 × 4 ＝ 36，和爸爸一樣 <span class="ok">✔</span>']);
- if(p.kind=='s')T.push(['③ 列式與原因','總份數 ＝ 1 ＋ 4 ＝ 5 份<br>一份（媽媽）＝ 45 ÷ 5<br>爸爸 ＝ 一份 × 4<p class="sub">為什麼？兩人合起來共 5 份，先求一份，再乘倍數。</p>'],['④ 計算','45 ÷ 5 ＝ <b class="ok">9</b>（媽媽）<br>9 × 4 ＝ <b class="ok">36</b>（爸爸）<br>答：媽媽 9 顆，爸爸 36 顆。'],['⑤ 代回檢驗','9 ＋ 36 ＝ 45 <span class="ok">✔</span>　36 ÷ 9 ＝ 4 <span class="ok">✔</span>']);
+ const {k,s,big,tot,diff,c,kind}=p,u=c.u,T=[];
+ const known={t:`${c.a} ${s} ${u}，${c.b}是${c.a}的 ${k} 倍`,d:`${c.b} ${big} ${u}，是${c.a}的 ${k} 倍`,s:`兩人共 ${tot} ${u}，${c.b}是${c.a}的 ${k} 倍`,f:`${c.b}比${c.a}多 ${diff} ${u}，${c.b}是${c.a}的 ${k} 倍`}[kind];
+ T.push(['① 題目拆解',`已知：${known}<br>求：${kind=='t'?c.b:kind=='d'?c.a:'兩人各多少'}`]);
+ T.push(['② 線段圖',diagram(p)]);
+ if(kind=='t')T.push(['③ 列式與原因',`${c.b} ＝ ${c.a} × 倍數 ＝ ${s} × ${k}<p class="sub">「${k} 倍」就是把 ${s} 重複 ${k} 份。</p>`],['④ 計算',`${s} × ${k} ＝ <b class="ok">${big}</b>　答：${big} ${u}`],['⑤ 代回檢驗',`${big} ÷ ${s} ＝ ${k} <span class="ok">✔</span>`]);
+ if(kind=='d')T.push(['③ 列式與原因',`${c.a} ＝ ${c.b} ÷ 倍數 ＝ ${big} ÷ ${k}<p class="sub">${c.b}有 ${k} 份，一份就是平分成 ${k} 份。</p>`],['④ 計算',`${big} ÷ ${k} ＝ <b class="ok">${s}</b>　答：${s} ${u}`],['⑤ 代回檢驗',`${s} × ${k} ＝ ${big} <span class="ok">✔</span>`]);
+ if(kind=='s')T.push(['③ 列式與原因',`總份數 ＝ 1 ＋ ${k} ＝ ${k+1} 份<br>一份（${c.a}）＝ ${tot} ÷ ${k+1}<br>${c.b} ＝ 一份 × ${k}<p class="sub">兩人合起來共 ${k+1} 份，先求一份。</p>`],['④ 計算',`${tot} ÷ ${k+1} ＝ <b class="ok">${s}</b>（${c.a}）<br>${s} × ${k} ＝ <b class="ok">${big}</b>（${c.b}）`],['⑤ 代回檢驗',`${s} ＋ ${big} ＝ ${tot} <span class="ok">✔</span>　${big} ÷ ${s} ＝ ${k} <span class="ok">✔</span>`]);
+ if(kind=='f')T.push(['③ 列式與原因',`多的份數 ＝ ${k} − 1 ＝ ${k-1} 份<br>一份（${c.a}）＝ ${diff} ÷ ${k-1}<br>${c.b} ＝ 一份 × ${k}<p class="sub">差 ${diff} 剛好是多出來的 ${k-1} 份。</p>`],['④ 計算',`${diff} ÷ ${k-1} ＝ <b class="ok">${s}</b>（${c.a}）<br>${s} × ${k} ＝ <b class="ok">${big}</b>（${c.b}）`],['⑤ 代回檢驗',`${big} − ${s} ＝ ${diff} <span class="ok">✔</span>　${big} ÷ ${s} ＝ ${k} <span class="ok">✔</span>`]);
  return T;}
-const HINT={t:'看到「幾倍」，想想：把小的那一個重複幾份？',d:'爸爸是 4 份，媽媽是 1 份。已知的是 4 份的總數，要找 1 份。',s:'先數一數「兩人合起來」是幾份？再用總數除以份數。'};
-const ANALOGY={t:'像一包餅乾有 12 片，爸爸拿 4 包，就是 4 個 12 疊在一起。',d:'像把 36 顆糖平均分給 4 個小朋友，每人分到幾顆？',s:'像 5 個人平分 45 元的披薩錢，其中爸爸要付 4 人份，媽媽付 1 人份。'};
+const HINT={t:'看到「幾倍」：想想把小的那一個重複幾份？用乘法。',d:'大的是 k 份、小的是 1 份。已知的是 k 份的總數，要找 1 份，用除法。',s:'先數「合起來」一共幾份（小的 1 份＋大的 k 份），再用總數去除。',f:'「多」的部分剛好是 (k−1) 份，用差去除以 (k−1) 就能求 1 份。'};
+const ANALOGY={t:'像一包餅乾有 12 片，拿 4 包，就是 4 個 12 疊在一起。',d:'像把 36 顆糖平分給 4 個小朋友，每人分到幾顆？',s:'像 5 個人平分 45 元披薩錢，其中一人付 4 人份、另一人付 1 人份。',f:'像哥哥比弟弟多拿了幾包，多出來的錢只要除以多出來的包數，就知道一包多少。'};
+newP();
 
 /* ---------- 畫面 ---------- */
 function vMap(){
@@ -78,20 +90,31 @@ function vMap(){
  <div class="card" style="border-color:var(--pri)"><h2>🍊 倍數應用題 <span class="sub">國小 3–4 年級</span></h2><p>是什麼 → 為什麼 → 例題 → 小測驗</p><button onclick="go('word')">開始學習</button></div>`+
  S.map(x=>`<div class="card soon"><h2>${x[0]} ${x[1]}</h2><p class="sub">${x[2]}</p><p class="sub">即將推出</p></div>`).join('');}
 function vWord(){
- const p=P[pi],T=steps(p);
+ const p=cur,T=steps(p),c=p.c,two=p.ans.length==2;
  let h=`<h1>🍊 倍數應用題</h1>
- <div class="card"><h2>是什麼？</h2><p>「A 是 B 的 4 倍」表示 A ＝ B 重複 4 份。</p><h2>為什麼要畫線段圖？</h2><p>把文字變成圖，份數關係一眼就看清楚。</p></div>
- <div class="row">${P.map((_,i)=>`<button class="chip ${i==pi?'on':''}" onclick="pi=${i};shown=1;help=0;render()">第 ${i+1} 題</button>`).join('')}</div>
- <div class="card"><div class="sub">題目</div><p>${p.t}</p></div>`;
- const n=help>=2?T.length:shown;
- for(let i=0;i<n;i++)h+=`<div class="step"><b>${T[i][0]}</b><div>${T[i][1]}</div></div>`;
+ <div class="card"><h2>是什麼？</h2><p>「A 是 B 的 4 倍」表示 A ＝ B 重複 4 份。</p><h2>怎麼做？</h2><p>先畫線段圖找出份數，再自己列式、計算，最後輸入答案。</p></div>
+ <div class="card"><div class="sub">題目（每次都是新題）</div><p>${p.t}</p></div>
+ <div class="step"><b>${T[1][0]}</b><div>${T[1][1]}</div></div>`;
  if(help>=1&&help<2)h+=`<div class="card" style="border-color:var(--sun)">💡 提示：${HINT[p.kind]}</div>`;
+ const open=solved||help>=2;
+ if(!open){
+  h+=`<div class="card"><p>換你算！${two?`輸入兩個答案：`:'輸入答案：'}</p>`+
+   (two?`<div class="row"><div style="flex:1">${c.a}<input id="w1" inputmode="numeric"></div><div style="flex:1">${c.b}<input id="w2" inputmode="numeric"></div></div>`:`<input id="w1" inputmode="numeric" placeholder="${p.kind=='t'?c.b:c.a}有幾${c.u}？">`)+
+   `<p>${msg}</p></div>`;
+ }else{
+  if(solved)h+=`<div class="card" style="border-color:var(--mint)"><p class="ok">答對了！${tried==0&&help==0?'一次就對，+2 ⭐':'+1 ⭐'}</p></div>`;
+  for(let i=2;i<T.length;i++)h+=`<div class="step"><b>${T[i][0]}</b><div>${T[i][1]}</div></div>`;
+ }
  if(help>=3)h+=`<div class="card" style="border-color:var(--pink)">🌈 生活比喻：${ANALOGY[p.kind]}</div>`;
- const done=n>=T.length;
- h+=`<div class="row">${done?(pi<P.length-1?`<button onclick="finish()">完成，下一題 ⭐</button>`:`<button onclick="finish()">完成 ⭐</button>`):`<button onclick="shown++;render()">下一步</button>`}<button class="warn" onclick="help=Math.min(3,help+1);render()">我不會（${help==0?'提示':help==1?'完整步驟':help==2?'生活比喻':'已全部顯示'}）</button></div>`;
+ h+=`<div class="row">${open?'':'<button onclick="checkW()">送出答案</button>'}<button class="warn" onclick="help=Math.min(3,help+1);render()">我不會（${help==0?'提示':help==1?'完整步驟':help==2?'生活比喻':'已全部顯示'}）</button><button class="alt" onclick="newP();render()">${open?'下一題':'換一題'}</button></div>`;
  return h;}
-function finish(){addStar(1);if(pi<P.length-1)pi++;shown=1;help=0;render()}
-function vSolve(){return `<h1>✏️ 解題</h1><p class="sub">試試：2x+5=11　或　3/4+1/2　（× 用 *，÷ 用 /）</p>
+function checkW(){
+ const v=[$('w1'),$('w2')].filter(Boolean).map(e=>e.value.trim());
+ if(v.some(x=>x===''))return;
+ if(v.every((x,i)=>+x===cur.ans[i])){solved=true;addStar(tried==0&&help==0?2:1);msg='';}
+ else{tried++;msg=`<span class="bad">還不對，再想想。${tried>=2?'可以按「我不會」看提示。':''}</span>`;}
+ render();}
+function vSolve(){return `<h1>✏️ 解題</h1><p class="sub">試試：2x+5=11、3x+2=x+10、x^2-5x+6=0、3/4+1/2、(3+5)*2（× 用 *，÷ 用 /）</p>
  <input id="q" placeholder="輸入算式" inputmode="text" autocapitalize="off"><div class="row" style="margin-top:10px"><button onclick="doSolve()">一步一步解</button></div><div id="out"></div>`;}
 function doSolve(){
  const raw=$('q').value,s=raw.replace(/\s/g,'').replace(/×/g,'*').replace(/÷/g,'/').replace(/＋/g,'+').replace(/－/g,'-');
@@ -110,7 +133,25 @@ function doSolve(){
    else if(o=='*'){n=a*c;dd=b*d;L.push(`分子乘分子、分母乘分母：${n}/${dd}`);}
    else{if(!c){L=['不能除以 0'];}else{L.push(`除以分數＝乘以倒數：${a}/${b} × ${d}/${c}`);n=a*d;dd=b*c;L.push(`相乘：${n}/${dd}`);}}
    if(!L[0].startsWith('不能'))L.push(`約分：<span class="ok">答：${frac(n,dd)}</span>`);}
- }else L=['目前支援：一元一次方程式（如 2x+5=11）與兩個分數的四則（如 3/4+1/2）。更多題型和拍照解題會陸續加入。'];
+ }else if(m=s.match(/^(-?\d*)x([+-]\d+)?=(-?\d*)x([+-]\d+)?$/)){
+  const co=t=>t==''?1:t=='-'?-1:+t,a=co(m[1]),b=+(m[2]||0),c=co(m[3]),d=+(m[4]||0);
+  L.push(`原式：${s}`,`x 移到左邊、數字移到右邊：(${a} − ${c})x ＝ ${d} − ${b}`,`整理：${a-c}x ＝ ${d-b}`);
+  if(a==c)L.push(d==b?'兩邊永遠相等：<span class="ok">有無限多個解</span>':'<span class="bad">不可能成立：無解</span>');
+  else L.push(`<span class="ok">答：x ＝ ${frac(d-b,a-c)}</span>`);
+ }else if(m=s.match(/^(-?\d*)x\^2([+-]\d*)x([+-]\d+)=0$/)){
+  const co=t=>t==''?1:t=='-'?-1:+t,a=co(m[1]),b=co(m[2]),c=+m[3];
+  const D=b*b-4*a*c;
+  L.push(`對照 ax²＋bx＋c＝0：a＝${a}，b＝${b}，c＝${c}`,`判別式 D ＝ b² − 4ac ＝ ${b*b} − ${4*a*c} ＝ ${D}`);
+  if(D<0)L.push('D < 0：<span class="bad">在實數中無解</span>');
+  else{const r=Math.sqrt(D);
+   if(Number.isInteger(r)){L.push(`公式 x ＝ (−b ± √D) ÷ 2a ＝ (${-b} ± ${r}) ÷ ${2*a}`);
+    const x1=frac(-b+r,2*a),x2=frac(-b-r,2*a);L.push(`<span class="ok">答：x ＝ ${x1}${x1==x2?'（重根）':` 或 ${x2}`}</span>`);}
+   else L.push(`<span class="ok">答：x ＝ (${-b} ± √${D}) ÷ ${2*a}</span>`);}
+ }else if(/^[\d+\-*\/().]+$/.test(s)&&/[+\-*\/]/.test(s)){
+  let r;try{r=Function('"use strict";return ('+s+')')()}catch(e){r=NaN}
+  if(!isFinite(r))L=['這個算式無法計算，請檢查括號與運算符號。'];
+  else L=[`原式：${s}`,'運算順序：括號 → 乘除 → 加減','<span class="ok">答：'+(Number.isInteger(r)?r:+r.toFixed(6))+'</span>'];
+ }else L=['目前支援：一元一次方程式（2x+5=11、3x+2=x+10）、一元二次方程式（x^2-5x+6=0）、兩分數四則（3/4+1/2）、一般四則運算（(3+5)*2）。任意文字題和拍照解題會在接上 AI 後支援。'];
  $('out').innerHTML=`<div class="card">${L.map((x,i)=>`<div class="step">${x}</div>`).join('')}</div>`;}
 function vGame(){
  if(!G)return `<h1>🎮 速算</h1><p class="sub">10 題，答對得 ⭐（目前 ⭐ ${stars}）</p><div class="card"><button onclick="startG()">開始挑戰</button></div>`;
