@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="數學樂園">
+<title>數學樂園</title>
+<style>
+:root{--bg:#F3F7FF;--card:#fff;--ink:#1B2A4A;--sub:#5B6B8C;--pri:#3D5AFE;--mint:#2EC4A6;--sun:#FFC93C;--pink:#FF6B8B;--line:#DCE4F5;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#0F1730;--card:#19244A;--ink:#EEF2FF;--sub:#9FB0D8;--pri:#7C93FF;--line:#2B3A6B;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"PingFang TC","Noto Sans TC",system-ui,sans-serif;font-size:17px;line-height:1.6}
+body{padding:env(safe-area-inset-top,0) 0 calc(76px + env(safe-area-inset-bottom,0))}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:26px;margin:8px 0 4px}h2{font-size:20px;margin:0 0 8px}p{margin:6px 0}
+.sub{color:var(--sub);font-size:15px}
+.card{background:var(--card);border-radius:20px;padding:16px;margin:12px 0;border:2px solid var(--line)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;border:0;border-radius:14px;padding:10px 16px;font-weight:700;background:var(--pri);color:#fff;min-height:44px}
+button.alt{background:transparent;color:var(--pri);border:2px solid var(--pri)}
+button.warn{background:var(--sun);color:#3a2b00}
+button:disabled{opacity:.4}
+input{font:inherit;width:100%;padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+mark{background:var(--sun);color:#3a2b00;border-radius:6px;padding:0 4px}
+.chip{border-radius:999px;padding:6px 14px;background:var(--bg);border:2px solid var(--line);color:var(--ink);min-height:0}
+.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.step{border-left:6px solid var(--mint);padding:4px 12px;margin:10px 0;background:var(--bg);border-radius:0 14px 14px 0}
+.step b{color:var(--mint)}
+.soon{opacity:.55}
+.big{font-size:30px;font-weight:800}
+.ok{color:var(--mint);font-weight:800}.bad{color:var(--pink);font-weight:800}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:2px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0))}
+nav button{flex:1;background:none;color:var(--sub);font-size:13px;padding:6px 2px;border-radius:12px}
+nav button.on{color:var(--pri);background:var(--bg)}
+nav span{display:block;font-size:22px}
+svg text{fill:var(--ink);font-family:inherit}
+</style></head><body><main id="app"></main>
+<nav id="nav"></nav>
+<script>
+const $=id=>document.getElementById(id),app=$('app');
+let tab='map',pi=0,shown=1,help=0,G=null;
+let stars=0;try{stars=+localStorage.getItem('stars')||0}catch(e){}
+function addStar(n){stars+=n;try{localStorage.setItem('stars',stars)}catch(e){}}
+const TABS=[['map','🗺️','學習地圖'],['word','🍊','應用題'],['solve','✏️','解題'],['game','🎮','遊戲'],['ai','📷','AI 家教']];
+function go(t){tab=t;render()}
+function drawNav(){$('nav').innerHTML=TABS.map(t=>`<button class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}</button>`).join('')}
+const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a),lcm=(a,b)=>a*b/gcd(a,b);
+const frac=(n,d)=>{const g=gcd(n,d)||1;n/=g;d/=g;return d==1?`${n}`:`${n}/${d}`};
+
+/* ---------- 倍數應用題資料 ---------- */
+const P=[
+{kind:'t',k:4,s:12,t:'爸爸採的柚子是媽媽的 <mark>4 倍</mark>。媽媽採了 <mark>12 顆</mark>，爸爸採了幾顆？'},
+{kind:'d',k:4,s:9,t:'爸爸採了 <mark>36 顆</mark>柚子，是媽媽的 <mark>4 倍</mark>。媽媽採了幾顆？'},
+{kind:'s',k:4,s:9,t:'爸爸和媽媽<mark>共</mark>採了 <mark>45 顆</mark>柚子，爸爸是媽媽的 <mark>4 倍</mark>。兩人各採幾顆？'}];
+function diagram(p){
+ const u=Math.min(60,240/p.k),k=p.k,big=k*p.s,tot=big+p.s;
+ const lm=p.kind=='d'?'?':p.kind=='s'?'?':p.s, lb=p.kind=='d'?big:'?';
+ let b=`<text x="0" y="40" font-size="15">媽媽</text><rect x="50" y="15" width="${u}" height="36" rx="8" fill="#FFC93C"/><text x="${50+u/2}" y="39" font-size="16" text-anchor="middle" fill="#3a2b00" style="fill:#3a2b00">${lm}</text>`;
+ b+=`<text x="0" y="92" font-size="15">爸爸</text>`;
+ for(let i=0;i<k;i++)b+=`<rect x="${50+i*u}" y="67" width="${u-3}" height="36" rx="8" fill="#3D5AFE"/>`;
+ b+=`<text x="${50+k*u/2}" y="91" font-size="16" text-anchor="middle" style="fill:#fff">${lb}</text>`;
+ if(p.kind=='s')b+=`<path d="M${50+k*u+8} 15V103" stroke="#FF6B8B" stroke-width="3" fill="none"/><text x="${50+k*u+16}" y="64" font-size="15">共 ${tot}</text>`;
+ return `<svg viewBox="0 0 330 115" width="100%" role="img" aria-label="線段圖">${b}</svg><p class="sub">黃色＝媽媽 1 份，藍色＝爸爸 ${k} 份</p>`;}
+function steps(p){
+ const k=p.k,s=p.s,big=k*s,tot=big+s,T=[];
+ T.push(['① 題目拆解',p.t+`<p>已知：${p.kind=='t'?'媽媽 12 顆，爸爸是媽媽的 4 倍':p.kind=='d'?'爸爸 36 顆，爸爸是媽媽的 4 倍':'總共 45 顆，爸爸是媽媽的 4 倍'}<br>求：${p.kind=='t'?'爸爸':p.kind=='d'?'媽媽':'兩人各幾顆'}</p>`]);
+ T.push(['② 畫線段圖',diagram(p)]);
+ if(p.kind=='t')T.push(['③ 列式與原因','爸爸 ＝ 媽媽 × 倍數<br>＝ 12 × 4<p class="sub">為什麼？「4 倍」就是把媽媽的 12 顆重複 4 份。</p>'],['④ 計算','12 × 4 ＝ <b class="ok">48</b>　答：爸爸採了 48 顆。'],['⑤ 代回檢驗','48 ÷ 12 ＝ 4，剛好是 4 倍 <span class="ok">✔</span>']);
+ if(p.kind=='d')T.push(['③ 列式與原因','媽媽 ＝ 爸爸 ÷ 倍數<br>＝ 36 ÷ 4<p class="sub">為什麼？爸爸有 4 份，一份就是 36 平分成 4 份。</p>'],['④ 計算','36 ÷ 4 ＝ <b class="ok">9</b>　答：媽媽採了 9 顆。'],['⑤ 代回檢驗','9 × 4 ＝ 36，和爸爸一樣 <span class="ok">✔</span>']);
+ if(p.kind=='s')T.push(['③ 列式與原因','總份數 ＝ 1 ＋ 4 ＝ 5 份<br>一份（媽媽）＝ 45 ÷ 5<br>爸爸 ＝ 一份 × 4<p class="sub">為什麼？兩人合起來共 5 份，先求一份，再乘倍數。</p>'],['④ 計算','45 ÷ 5 ＝ <b class="ok">9</b>（媽媽）<br>9 × 4 ＝ <b class="ok">36</b>（爸爸）<br>答：媽媽 9 顆，爸爸 36 顆。'],['⑤ 代回檢驗','9 ＋ 36 ＝ 45 <span class="ok">✔</span>　36 ÷ 9 ＝ 4 <span class="ok">✔</span>']);
+ return T;}
+const HINT={t:'看到「幾倍」，想想：把小的那一個重複幾份？',d:'爸爸是 4 份，媽媽是 1 份。已知的是 4 份的總數，要找 1 份。',s:'先數一數「兩人合起來」是幾份？再用總數除以份數。'};
+const ANALOGY={t:'像一包餅乾有 12 片，爸爸拿 4 包，就是 4 個 12 疊在一起。',d:'像把 36 顆糖平均分給 4 個小朋友，每人分到幾顆？',s:'像 5 個人平分 45 元的披薩錢，其中爸爸要付 4 人份，媽媽付 1 人份。'};
+
+/* ---------- 畫面 ---------- */
+function vMap(){
+ const S=[['🧸','學齡前','數數、分類、比較、形狀'],['🎒','國小 1–2 年級','100／1000 以內、加減、九九乘法'],['📘','國小 3–4 年級','乘除直式、概數、分數、小數'],['🏅','國小 5–6 年級','因數倍數、比與比值、百分率、體積'],['📐','國中','方程式、因式分解、函數、畢氏定理'],['📈','高中','指數對數、數列、三角、向量'],['🎓','大學以後','微積分、線性代數、機率統計']];
+ return `<h1>數學樂園</h1><p class="sub">依 108 課綱 · 累積 ⭐ ${stars}</p>
+ <div class="card" style="border-color:var(--pri)"><h2>🍊 倍數應用題 <span class="sub">國小 3–4 年級</span></h2><p>是什麼 → 為什麼 → 例題 → 小測驗</p><button onclick="go('word')">開始學習</button></div>`+
+ S.map(x=>`<div class="card soon"><h2>${x[0]} ${x[1]}</h2><p class="sub">${x[2]}</p><p class="sub">即將推出</p></div>`).join('');}
+function vWord(){
+ const p=P[pi],T=steps(p);
+ let h=`<h1>🍊 倍數應用題</h1>
+ <div class="card"><h2>是什麼？</h2><p>「A 是 B 的 4 倍」表示 A ＝ B 重複 4 份。</p><h2>為什麼要畫線段圖？</h2><p>把文字變成圖，份數關係一眼就看清楚。</p></div>
+ <div class="row">${P.map((_,i)=>`<button class="chip ${i==pi?'on':''}" onclick="pi=${i};shown=1;help=0;render()">第 ${i+1} 題</button>`).join('')}</div>
+ <div class="card"><div class="sub">題目</div><p>${p.t}</p></div>`;
+ const n=help>=2?T.length:shown;
+ for(let i=0;i<n;i++)h+=`<div class="step"><b>${T[i][0]}</b><div>${T[i][1]}</div></div>`;
+ if(help>=1&&help<2)h+=`<div class="card" style="border-color:var(--sun)">💡 提示：${HINT[p.kind]}</div>`;
+ if(help>=3)h+=`<div class="card" style="border-color:var(--pink)">🌈 生活比喻：${ANALOGY[p.kind]}</div>`;
+ const done=n>=T.length;
+ h+=`<div class="row">${done?(pi<P.length-1?`<button onclick="finish()">完成，下一題 ⭐</button>`:`<button onclick="finish()">完成 ⭐</button>`):`<button onclick="shown++;render()">下一步</button>`}<button class="warn" onclick="help=Math.min(3,help+1);render()">我不會（${help==0?'提示':help==1?'完整步驟':help==2?'生活比喻':'已全部顯示'}）</button></div>`;
+ return h;}
+function finish(){addStar(1);if(pi<P.length-1)pi++;shown=1;help=0;render()}
+function vSolve(){return `<h1>✏️ 解題</h1><p class="sub">試試：2x+5=11　或　3/4+1/2　（× 用 *，÷ 用 /）</p>
+ <input id="q" placeholder="輸入算式" inputmode="text" autocapitalize="off"><div class="row" style="margin-top:10px"><button onclick="doSolve()">一步一步解</button></div><div id="out"></div>`;}
+function doSolve(){
+ const raw=$('q').value,s=raw.replace(/\s/g,'').replace(/×/g,'*').replace(/÷/g,'/').replace(/＋/g,'+').replace(/－/g,'-');
+ let L=[],m;
+ if(m=s.match(/^(-?\d*)x([+-]\d+)?=(-?\d+)$/)){
+  const a=m[1]==''?1:m[1]=='-'?-1:+m[1],b=+(m[2]||0),c=+m[3];
+  if(a==0)L=['x 的係數不能是 0'];
+  else{L.push(`原式：${s}`);if(b)L.push(`兩邊同時${b>0?'減':'加'} ${Math.abs(b)}：${a==1?'':a}x ＝ ${c} ${b>0?'−':'+'} ${Math.abs(b)} ＝ ${c-b}`);
+   if(a!=1)L.push(`兩邊同時除以 ${a}：x ＝ ${c-b} ÷ ${a} ＝ ${frac(c-b,a)}`);
+   L.push(`<span class="ok">答：x ＝ ${frac(c-b,a)}</span>`);}
+ }else if(m=s.match(/^(\d+)\/(\d+)([+\-*\/])(\d+)\/(\d+)$/)){
+  let[,a,b,o,c,d]=m;a=+a;b=+b;c=+c;d=+d;let n,dd;
+  if(!b||!d)L=['分母不能是 0'];
+  else{L.push(`原式：${a}/${b} ${o} ${c}/${d}`);
+   if(o=='+'||o=='-'){const l=lcm(b,d),x=a*l/b,y=c*l/d;L.push(`通分，分母取 ${l}：${x}/${l} ${o} ${y}/${l}`);n=o=='+'?x+y:x-y;dd=l;L.push(`分子計算：${x} ${o} ${y} ＝ ${n}`);}
+   else if(o=='*'){n=a*c;dd=b*d;L.push(`分子乘分子、分母乘分母：${n}/${dd}`);}
+   else{if(!c){L=['不能除以 0'];}else{L.push(`除以分數＝乘以倒數：${a}/${b} × ${d}/${c}`);n=a*d;dd=b*c;L.push(`相乘：${n}/${dd}`);}}
+   if(!L[0].startsWith('不能'))L.push(`約分：<span class="ok">答：${frac(n,dd)}</span>`);}
+ }else L=['目前支援：一元一次方程式（如 2x+5=11）與兩個分數的四則（如 3/4+1/2）。更多題型和拍照解題會陸續加入。'];
+ $('out').innerHTML=`<div class="card">${L.map((x,i)=>`<div class="step">${x}</div>`).join('')}</div>`;}
+function vGame(){
+ if(!G)return `<h1>🎮 速算</h1><p class="sub">10 題，答對得 ⭐（目前 ⭐ ${stars}）</p><div class="card"><button onclick="startG()">開始挑戰</button></div>`;
+ if(G.i>=10)return `<h1>🎮 完成！</h1><div class="card"><p class="big">${G.ok} / 10</p><p>${G.ok>=9?'太厲害了！':G.ok>=6?'很棒，再練一次！':'繼續加油，多練就會進步！'}</p><button onclick="startG()">再玩一次</button></div>`;
+ return `<h1>🎮 速算 ${G.i+1}/10</h1><div class="card"><p class="big">${G.q[0]} ${G.q[1]} ${G.q[2]} ＝ ?</p><input id="ga" inputmode="numeric" onkeydown="if(event.key=='Enter')ansG()"><div class="row" style="margin-top:10px"><button onclick="ansG()">送出</button></div><p id="fb"></p></div>`;}
+function nextQ(){const r=n=>1+Math.floor(Math.random()*n),t=r(3);return t==1?[r(30),'＋',r(30)]:t==2?[r(9),'×',r(9)]:[r(30)+20,'－',r(19)]}
+function startG(){G={i:0,ok:0,q:nextQ()};render()}
+function ansG(){const q=G.q,v=q[1]=='＋'?q[0]+q[2]:q[1]=='×'?q[0]*q[2]:q[0]-q[2];const a=$('ga').value;if(a==='')return;
+ const ok=+a===v;if(ok){G.ok++;addStar(1)}
+ $('fb').innerHTML=ok?'<span class="ok">答對了 ⭐</span>':`<span class="bad">答案是 ${v}</span>`;
+ setTimeout(()=>{G.i++;G.q=nextQ();render()},ok?500:1200);}
+function vAI(){return `<h1>📷 AI 家教</h1><div class="card soon"><p>📷 拍照解題：即將推出</p><p>🤖 AI 家教：即將推出</p><p class="sub">之後任何文字題、拍照題都會走和「解題」同一個入口。</p></div>`;}
+function render(){drawNav();app.innerHTML={map:vMap,word:vWord,solve:vSolve,game:vGame,ai:vAI}[tab]();window.scrollTo(0,0)}
+render();
+</script></body></html>
